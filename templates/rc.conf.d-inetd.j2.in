@@ -1,0 +1,8 @@
+# {{ tftp_server_rc_inetd_freebsd_file }}
+# {{ ansible_managed }}
+
+inetd_enable="{% if tftp_server_rc_inetd_enable is sameas true %}YES{% else %}NO{% endif %}"
+inetd_flags="{{ tftp_server_rc_inetd_flags }}"
+
+# vim: set sw=2 ts=2 et :
+# eof

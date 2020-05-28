@@ -1,0 +1,10 @@
+---
+
+tftp_server_group: "wheel"
+
+tftp_server_service: "inetd"
+
+tftp_server_root: "/tftpboot"
+
+# vim: set syn=yaml sw=2 ts=2 et colorcolumn=160 :
+# eof

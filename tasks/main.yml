@@ -1,0 +1,191 @@
+---
+
+# forced os variables
+- name: os forced variables
+  include_vars: "{{ lookup('first_found', params) }}"
+  vars:
+    params:
+      files:
+        - '{{ ansible_distribution }}-{{ ansible_machine | default("none") }}.yml'
+        - '{{ ansible_distribution }}-{{ ansible_distribution_release | default(0) }}.yml'
+        - '{{ ansible_distribution }}-{{ ansible_distribution_version | default(0) }}.yml'
+        - '{{ ansible_distribution }}-{{ ansible_distribution_major_version | default(0) }}.yml'
+        - '{{ ansible_distribution }}.yml'
+        - '{{ ansible_os_family }}.yml'
+        - 'main.yml'
+      paths:
+        - 'vars'
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+  tags: [ tftp-server ]
+
+# packages
+- name: packages (freebsd)
+  pkgng:
+    name: '{{ tftp_server_packages_freebsd | default([]) }}'
+    state: '{{ tftp_server_packages_freebsd_state | default("latest") }}'
+    cached: '{{ tftp_server_packages_freebsd_cached | default(false) }}'
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_os_family == 'FreeBSD'
+  tags: [ tftp-server ]
+
+- name: packages (redhat)
+  yum:
+    name: '{{ tftp_server_packages_redhat | default([]) }}'
+    state: '{{ tftp_server_packages_redhat_state | default("latest") }}'
+    update_cache: '{{ tftp_server_packages_redhat_update_cache | default(true) }}'
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_os_family == 'RedHat'
+  tags: [ tftp-server ]
+
+# rc
+- name: freebsd rc.conf.d inetd (template)
+  template:
+    dest: '{{ tftp_server_rc_inetd_freebsd_file }}'
+    src: "{{ lookup('first_found', params) }}"
+    #
+    mode: '{{ tftp_server_rc_inetd_freebsd_file_mode | default(tftp_server_file_mode) }}'
+    owner: '{{ tftp_server_rc_inetd_freebsd_file_owner | default(tftp_server_owner) }}'
+    group: '{{ tftp_server_rc_inetd_freebsd_file_group | default(tftp_server_group) }}'
+    backup: '{{ tftp_server_rc_inetd_freebsd_file_backup | default(tftp_server_backup) }}'
+    validate: '{{ tftp_server_rc_inetd_freebsd_file_validate | default(omit) }}'
+  vars:
+    tpl_default: "rc.conf.d-inetd"
+    tpl_presence: '{{ tftp_server_rc_inetd_freebsd_file_template | default(tpl_default) }}'
+    params:
+      files:
+        - '{{ tpl_presence }}.{{ inventory_hostname }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}-{{ ansible_distribution_version | default(0) }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}-{{ ansible_distribution_major_version | default(0) }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_os_family }}.j2'
+        - '{{ tpl_presence }}.j2'
+        - '{{ tpl_presence }}.j2.in' # role default
+      paths:
+        - 'templates'
+  notify:
+    - restart_tftp
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_os_family == 'FreeBSD'
+  tags: [ tftp-server ]
+
+# inetd config
+- name: freebsd inetd.conf
+  blockinfile:
+    dest: '{{ tftp_server_inetd_cfg_file }}'
+    block: "{{ tftp_server_inetd_cfg | join('\n') }}"
+    marker: "# {mark} ANSIBLE MANAGED TFTP BLOCK"
+    state: '{{ tftp_server_inetd_cfg_state | default("present") }}'
+    backup: '{{ tftp_server_inetd_cfg_backup | default(tftp_server_backup) }}'
+  notify:
+    - restart_tftp
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_os_family == 'FreeBSD'
+  tags: [ tftp-server ]
+
+# selinux
+- name: selinux set allow_ftpd_full_access
+  seboolean:
+    name: allow_ftpd_full_access
+    state: true
+    persistent: true
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_selinux != "false"
+        and ansible_selinux.status == "enabled"
+  tags: [ tftp-server ]
+
+# service facts
+- name: get service info/facts
+  service_facts:
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+  tags: [ tftp-server ]
+
+# firewalld
+- name: firewalld allow tftp
+  firewalld:
+    service: tftp
+    immediate: true
+    permanent: true
+    state: enabled
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ( ansible_os_family == 'RedHat' )
+        and ansible_facts.services["firewalld.service"].state == "running"
+  tags: [ tftp-server ]
+
+- name: firewalld allow tftp-client
+  firewalld:
+    service: tftp-client
+    immediate: true
+    permanent: true
+    state: enabled
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ( ansible_os_family == 'RedHat' )
+        and ansible_facts.services["firewalld.service"].state == "running"
+  tags: [ tftp-server ]
+
+# xinetd
+- name: xinetd tftp
+  template:
+    dest: '{{ tftp_server_xinetd_file }}'
+    src: "{{ lookup('first_found', params) }}"
+    #
+    mode: '{{ tftp_server_xinetd_file_mode | default(tftp_server_file_mode) }}'
+    owner: '{{ tftp_server_xinetd_file_owner | default(tftp_server_owner) }}'
+    group: '{{ tftp_server_xinetd_file_group | default(tftp_server_group) }}'
+    backup: '{{ tftp_server_xinetd_file_backup | default(tftp_server_backup) }}'
+    validate: '{{ tftp_server_xinetd_file_validate | default(omit) }}'
+  vars:
+    tpl_default: "tftp"
+    tpl_presence: '{{ tftp_server_xinetd_file_template | default(tpl_default) }}'
+    params:
+      files:
+        - '{{ tpl_presence }}.{{ inventory_hostname }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}-{{ ansible_distribution_version | default(0) }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}-{{ ansible_distribution_major_version | default(0) }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_distribution }}.j2'
+        - '{{ tpl_presence }}.{{ ansible_os_family }}.j2'
+        - '{{ tpl_presence }}.j2'
+        - '{{ tpl_presence }}.j2.in' # role default
+      paths:
+        - 'templates'
+  notify:
+    - restart_tftp
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and tftp_server_service == 'xinetd'
+  tags: [ tftp-server ]
+
+# tftp
+- name: service
+  service:
+    name: '{{ tftp_server_service }}'
+    state: started
+    enabled: true
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and ansible_service_mgr == 'systemd'
+  tags: [ tftp-server ]
+
+# tftp root & link
+- name: root link
+  file:
+    src: '{{ tftp_server_root }}'
+    dest: '{{ tftp_server_root_link }}'
+    owner: '{{ tftp_server_owner }}'
+    group: '{{ tftp_server_group }}'
+    state: link
+  when: tftp_server_enabled
+        and ansible_os_family | string in tftp_server_os_family_supported
+        and tftp_server_root != tftp_server_root_link
+  tags: [ tftp-server ]
+
+# vim: set syn=yaml sw=2 ts=2 et colorcolumn=160 :
+# eof

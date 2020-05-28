@@ -1,0 +1,51 @@
+---
+
+# enabled
+tftp_server_enabled: no
+
+# mode/owner/group/backup defaults
+tftp_server_file_mode: "0444"
+tftp_server_dir_mode: "0755"
+tftp_server_owner: "root"
+tftp_server_group: "root"
+tftp_server_backup: yes
+
+# packages
+tftp_server_packages_freebsd:
+  - ftp/tftp-hpa
+
+tftp_server_packages_redhat:
+  - libsemanage-python
+  - tftp
+  - tftp-server
+  - xinetd
+
+# rc
+tftp_server_rc_inetd_freebsd_file: "/etc/rc.conf.d/inetd"
+tftp_server_rc_inetd_enable: yes
+tftp_server_rc_inetd_flags: "-wW -C 60"
+
+# tftp
+tftp_server_service: "xinetd"
+
+tftp_server_root: "/var/lib/tftpboot"
+tftp_server_root_link: "/tftpboot"
+
+# inetd
+tftp_server_inetd_cfg_file: "/etc/inetd.conf"
+
+tftp_server_inetd_cfg:
+  #- "tftp  dgram udp   wait  root  /usr/libexec/tftpd  tftpd -l -s {{ tftp_server_root }}"
+  #- "tftp  dgram udp6  wait  root  /usr/libexec/tftpd  tftpd -l -s {{ tftp_server_root }}"
+  - "tftp  dgram udp   wait  root  /usr/local/libexec/in.tftpd  in.tftpd -4 -p -v -s {{ tftp_server_root }}"
+  - "tftp  dgram udp6  wait  root  /usr/local/libexec/in.tftpd  in.tftpd -6 -p -v -s {{ tftp_server_root }}"
+
+# xinetd
+tftp_server_xinetd_file: "/etc/xinetd.d/tftp"
+tftp_server_xinetd_file_mode: "0600"
+
+tftp_server_xinetd_per_source: "UNLIMITED"
+tftp_server_xinetd_cps: "128 60"
+
+# vim: set syn=yaml sw=2 ts=2 et colorcolumn=160 :
+# eof

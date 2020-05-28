@@ -1,0 +1,19 @@
+# {{ tftp_server_xinetd_file }}
+# {{ ansible_managed }}
+
+service tftp
+{
+  socket_type   = dgram
+  protocol      = udp
+  wait          = yes
+  user          = root
+  server        = /usr/sbin/in.tftpd
+  server_args   = -s {{ tftp_server_root }}
+  disable       = no
+  per_source    = {{ tftp_server_xinetd_per_source }}
+  cps           = {{ tftp_server_xinetd_cps }}
+  flags         = IPv4
+}
+
+# vim: set sw=2 ts=2 et :
+# eof

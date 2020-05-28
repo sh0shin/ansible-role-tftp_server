@@ -1,0 +1,10 @@
+---
+
+# tftp
+- name: restart_tftp
+  service:
+    name: '{{ tftp_server_service }}'
+    state: restarted
+
+# vim: set syn=yaml sw=2 ts=2 et colorcolumn=160 :
+# eof
