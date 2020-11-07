@@ -31,9 +31,8 @@ tftp_server_service: "xinetd"
 tftp_server_root: "/var/lib/tftpboot"
 tftp_server_root_link: "/tftpboot"
 
-# inetd
+# inetd freebsd
 tftp_server_inetd_cfg_file: "/etc/inetd.conf"
-
 tftp_server_inetd_cfg:
   #- "tftp  dgram udp   wait  root  /usr/libexec/tftpd  tftpd -l -s {{ tftp_server_root }}"
   #- "tftp  dgram udp6  wait  root  /usr/libexec/tftpd  tftpd -l -s {{ tftp_server_root }}"
