@@ -12,7 +12,7 @@ tftp_server_backup: yes
 
 # packages
 tftp_server_packages_freebsd:
-  - ftp/tftp-hpa
+  - tftp-hpa
 
 tftp_server_packages_redhat:
   - libsemanage-python
