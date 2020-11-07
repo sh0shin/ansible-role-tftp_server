@@ -4,7 +4,7 @@ galaxy_info:
   role_name: tftp_server
   author: Chris 'sh0shin' Frage
   description: Install TFTP Server
-  company: EDV-BV GmbH
+  #company:
   #issue_tracker_url: http://example.com/issue/tracker
   license: BSD-3-Clause
 
@@ -24,6 +24,7 @@ galaxy_info:
 
   galaxy_tags:
     - tftp
+    - tftpd
 
 dependencies: []
 
